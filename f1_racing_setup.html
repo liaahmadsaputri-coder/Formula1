@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="theme-color" content="#101b2b" />
+<title>F1 Racing — Garage Prototype</title>
+<style>
+  :root{--bg:#0d1727;--panel:rgba(15,27,46,.82);--line:rgba(255,255,255,.16);--text:#f5f7ff;--muted:#aebbd0;--accent:#ff5368;--gold:#ffd36b}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;overflow-x:hidden}
+  #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+  .shade{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(6,13,25,.88),rgba(6,13,25,.25) 48%,rgba(6,13,25,.42)),linear-gradient(0deg,rgba(5,12,24,.75),transparent 55%)}
+  .app{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;padding:18px clamp(14px,3vw,38px) 24px;gap:18px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:900;letter-spacing:.14em;font-size:clamp(17px,3vw,25px)}.brand span{color:var(--accent)}.tag{font-size:11px;color:#c6d3e8;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}.pill{border:1px solid var(--line);background:rgba(8,18,32,.55);border-radius:99px;padding:9px 13px;font-size:12px;color:#dce7f7}
+  .layout{display:grid;grid-template-columns:minmax(245px,330px) minmax(240px,1fr) minmax(230px,300px);gap:14px;align-items:stretch;flex:1}
+  .panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(15px);border-radius:20px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.2)}
+  .panel h2{font-size:14px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 13px;color:#d9e5f7}.tabs{display:flex;gap:6px;margin-bottom:14px}.tab{flex:1;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#dbe5f5;border-radius:11px;padding:10px 6px;font-weight:700;font-size:12px}.tab.active{background:linear-gradient(135deg,#ff6374,#c92c51);border-color:transparent;color:white}
+  .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.choice{border:1px solid var(--line);background:rgba(255,255,255,.055);border-radius:13px;padding:10px;text-align:left;color:var(--text);min-width:0}.choice.active{border:1px solid #8ee8ff;box-shadow:0 0 0 2px rgba(142,232,255,.16),0 0 20px rgba(142,232,255,.12);background:rgba(66,151,190,.18)}.portrait{height:74px;border-radius:9px;margin-bottom:8px;display:grid;place-items:center;font-size:35px;background:linear-gradient(145deg,#344e70,#192a42)}.choice strong{display:block;font-size:12px}.choice small{color:var(--muted);font-size:10px}
+  .center{display:flex;flex-direction:column;justify-content:flex-end;min-height:430px;pointer-events:none}.center .hint{align-self:center;background:rgba(10,20,35,.56);border:1px solid var(--line);padding:10px 15px;border-radius:99px;color:#dce8fa;font-size:12px;backdrop-filter:blur(8px)}
+  .right{display:flex;flex-direction:column;gap:12px}.car-preview{height:130px;border-radius:13px;background:linear-gradient(135deg,rgba(120,173,211,.25),rgba(255,255,255,.04));display:grid;place-items:center;font-size:72px}.stat{display:flex;align-items:center;gap:9px;margin:11px 0;font-size:11px;color:#d5e1f2}.bar{height:6px;flex:1;background:rgba(255,255,255,.12);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#7ce6ff,#ffd36b);border-radius:9px}.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.swatch{width:31px;height:31px;border-radius:50%;border:2px solid rgba(255,255,255,.5);box-shadow:0 2px 8px #0005}.swatch.active{outline:2px solid white;outline-offset:3px}
+  label{display:block;color:var(--muted);font-size:11px;margin:13px 0 6px}input{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.08);color:white;border-radius:10px;padding:11px 12px;font:inherit;outline:none}input:focus{border-color:#8ee8ff}.summary{font-size:12px;line-height:1.7;color:#c5d2e6}.start{width:100%;border:0;border-radius:13px;padding:15px 12px;margin-top:auto;background:linear-gradient(110deg,#ffe28a,#ffb94f);color:#39240a;font-weight:900;font-size:15px;letter-spacing:.04em;box-shadow:0 8px 28px rgba(255,190,80,.2)}.start:active{transform:translateY(1px)}.note{font-size:10px;color:#9eacc2;line-height:1.5;margin-top:9px}
+  .toast{position:fixed;z-index:5;left:50%;bottom:18px;transform:translateX(-50%);background:#14243a;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:12px;box-shadow:0 10px 30px #0008;display:none;max-width:90%;text-align:center}
+  @media(max-width:850px){.layout{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.center{grid-column:1/-1;grid-row:1;min-height:210px}.left{grid-column:1}.right{grid-column:2}}
+  @media(max-width:560px){.app{padding:13px 11px 20px}.layout{grid-template-columns:1fr}.center{grid-column:1;grid-row:1;min-height:180px}.left,.right{grid-column:1}.panel{padding:13px}.choices{grid-template-columns:repeat(2,minmax(0,1fr))}.right{min-height:360px}.pill{display:none}}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas><div class="shade"></div>
+<div class="app">
+  <header><div><div class="brand">APEX<span>/</span>RACING</div><div class="tag">3D formula racing · garage prototype 0.1</div></div><div class="pill">● LOCAL PROTOTYPE &nbsp; | &nbsp; NO AI REQUIRED</div></header>
+  <main class="layout">
+    <section class="panel left">
+      <div class="tabs"><button class="tab active" data-tab="player">① Player</button><button class="tab" data-tab="car">② Car</button><button class="tab" data-tab="team">③ Team</button></div>
+      <div id="playerPanel"><h2>Select your driver</h2><div class="choices" id="playerChoices"></div><label for="driverName">Nama pembalap</label><input id="driverName" maxlength="18" value="Racing Star" placeholder="Nama pembalap" /></div>
+      <div id="carPanel" hidden><h2>Choose your machine</h2><p class="summary">Pilih warna mobil. Model mobil 3D di tengah akan ikut berubah.</p><div class="swatches" id="carSwatches"></div><label for="carNumber">Nomor mobil</label><input id="carNumber" type="number" min="1" max="99" value="27" /></div>
+      <div id="teamPanel" hidden><h2>Create your team</h2><p class="summary">Buat identitas tim balapmu sendiri.</p><label for="teamName">Nama tim</label><input id="teamName" maxlength="24" value="Aurora Racing" /><label for="teamTag">Tagline</label><input id="teamTag" maxlength="32" value="Chase the Horizon" /></div>
+    </section>
+    <section class="center"><div class="hint">DRAG TO ROTATE · 3D GARAGE PREVIEW</div></section>
+    <aside class="panel right">
+      <div><h2>Racing identity</h2><div class="summary" id="identity">Driver: Racing Star<br>Car: Aurora Red #27<br>Team: Aurora Racing</div></div>
+      <div><h2>Car performance</h2><div class="stat">Speed <div class="bar"><i style="width:88%"></i></div></div><div class="stat">Handling <div class="bar"><i style="width:76%"></i></div></div><div class="stat">Braking <div class="bar"><i style="width:82%"></i></div></div><div class="stat">Acceleration <div class="bar"><i style="width:91%"></i></div></div><div class="note">Stat ini masih contoh tampilan. Belum memengaruhi fisika mobil.</div></div>
+      <button class="start" id="startBtn">CONFIRM SETUP →</button><div class="note">Prototype awal: menu pemilihan sudah interaktif. Balapan, multiplayer online, dan model karakter detail akan dibuat pada tahap berikutnya.</div>
+    </aside>
+  </main>
+</div><div class="toast" id="toast"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const canvas=document.querySelector('#scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+const scene=new THREE.Scene();scene.fog=new THREE.Fog(0x9fc9e8,17,48);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,100);camera.position.set(7,5.1,9);camera.lookAt(0,.7,0);
+scene.add(new THREE.HemisphereLight(0xdff3ff,0x53627b,2.1));const sun=new THREE.DirectionalLight(0xffe1b3,3.2);sun.position.set(-5,9,6);scene.add(sun);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0x6c8e9f,roughness:.86}));floor.rotation.x=-Math.PI/2;floor.position.y=-.08;scene.add(floor);
+const grid=new THREE.GridHelper(70,70,0xd3e7f5,0xb8d0e2);grid.position.y=-.065;scene.add(grid);
+// simple futuristic garage architecture
+function box(w,h,d,color,x,y,z,rough=.55){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:rough,metalness:.15}));m.position.set(x,y,z);scene.add(m);return m}
+box(18,3,.35,0x29415d,0,1.5,-7);box(18,.16,.5,0x9bdcf0,0,3.1,-6.8);box(.25,5,12,0x45617d,-9,2,-1);box(.25,5,12,0x45617d,9,2,-1);
+const car=new THREE.Group();scene.add(car);
+const paint=new THREE.MeshStandardMaterial({color:0xe52f4f,metalness:.58,roughness:.27});const dark=new THREE.MeshStandardMaterial({color:0x111827,metalness:.35,roughness:.48});const carbon=new THREE.MeshStandardMaterial({color:0x202b3b,metalness:.5,roughness:.32});const glass=new THREE.MeshStandardMaterial({color:0x77d9f5,metalness:.6,roughness:.16,transparent:true,opacity:.72});
+function part(parent,geo,mat,x,y,z,rx=0,ry=0,rz=0){const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);parent.add(o);return o}
+// car points toward +Z
+part(car,new THREE.BoxGeometry(1.5,.28,3.4),paint,0,.48,0);part(car,new THREE.ConeGeometry(.76,2.1,4),paint,0,.48,2.05,Math.PI/2,0,0).rotation.x=Math.PI/2;
+part(car,new THREE.BoxGeometry(1.05,.23,1.35),carbon,0,.68,-.25);part(car,new THREE.BoxGeometry(.78,.2,.95),dark,0,.83,-.2);
+part(car,new THREE.BoxGeometry(2.3,.12,.34),dark,0,.55,-1.75);part(car,new THREE.BoxGeometry(2.5,.1,.25),paint,0,.66,-1.7);
+part(car,new THREE.BoxGeometry(2.05,.12,.32),carbon,0,.28,2.65);part(car,new THREE.BoxGeometry(2.15,.12,.22),paint,0,.39,2.62);
+// cockpit rim + halo
+part(car,new THREE.TorusGeometry(.62,.055,8,32),carbon,0,.98,-.15,Math.PI/2,0,0);part(car,new THREE.CylinderGeometry(.045,.045,.72,10),carbon,0,1.25,.48);
+// wheels
+const wheelGeo=new THREE.CylinderGeometry(.43,.43,.28,24);for(const x of [-1,1])for(const z of [-1.45,1.55]){const wh=part(car,wheelGeo,dark,x*1.02,.42,z,0,0,Math.PI/2);const hub=part(car,new THREE.CylinderGeometry(.19,.19,.292,20),new THREE.MeshStandardMaterial({color:0xaab9ca,metalness:.8,roughness:.22}),x*1.02,.42,z,0,0,Math.PI/2);}
+// driver helmet hint
+part(car,new THREE.SphereGeometry(.24,18,14),new THREE.MeshStandardMaterial({color:0xf0d2bb,roughness:.65}),0,1.12,-.12);part(car,new THREE.SphereGeometry(.25,18,14),new THREE.MeshStandardMaterial({color:0x172d4c,metalness:.35,roughness:.2}),0,1.27,-.13);
+const accent=part(car,new THREE.BoxGeometry(.08,.035,2.4),new THREE.MeshStandardMaterial({color:0xffd36b,emissive:0x5b2e00}),0,.64,.1);
+const colors=[{name:'Aurora Red',hex:0xe52f4f,css:'#e52f4f'},{name:'Ocean Blue',hex:0x247bd1,css:'#247bd1'},{name:'Royal Purple',hex:0x8c50d9,css:'#8c50d9'},{name:'Pearl White',hex:0xe8edf5,css:'#e8edf5'},{name:'Emerald',hex:0x16a982,css:'#16a982'},{name:'Sunset Orange',hex:0xf18a32,css:'#f18a32'}];let chosenColor=colors[0],chosenPlayer={name:'Ari',emoji:'🏎️',role:'Rookie driver'};
+const players=[{name:'Ari',emoji:'🧑🏻‍🚀',role:'Rookie driver'},{name:'Kai',emoji:'👨🏻‍🚀',role:'Precision racer'},{name:'Mika',emoji:'👩🏻‍🚀',role:'Corner specialist'},{name:'Ren',emoji:'🧑🏽‍🚀',role:'Speed hunter'}];
+const pc=document.querySelector('#playerChoices');players.forEach((p,i)=>{const b=document.createElement('button');b.className='choice'+(!i?' active':'');b.innerHTML=`<div class="portrait">${p.emoji}</div><strong>${p.name}</strong><small>${p.role}</small>`;b.onclick=()=>{document.querySelectorAll('#playerChoices .choice').forEach(x=>x.classList.remove('active'));b.classList.add('active');chosenPlayer=p;updateIdentity()};pc.append(b)});
+const sw=document.querySelector('#carSwatches');colors.forEach((c,i)=>{const b=document.createElement('button');b.className='swatch'+(!i?' active':'');b.style.background=c.css;b.title=c.name;b.onclick=()=>{document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));b.classList.add('active');chosenColor=c;paint.color.setHex(c.hex);updateIdentity()};sw.append(b)});
+const tabs=document.querySelectorAll('.tab');tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.toggle('active',x===t));['player','car','team'].forEach(k=>document.querySelector('#'+k+'Panel').hidden=k!==t.dataset.tab)});
+function updateIdentity(){const name=document.querySelector('#driverName').value||chosenPlayer.name;const team=document.querySelector('#teamName').value||'Untitled Team';const num=document.querySelector('#carNumber').value||'27';document.querySelector('#identity').innerHTML=`Driver: ${escapeHtml(name)} (${chosenPlayer.name})<br>Car: ${chosenColor.name} #${escapeHtml(num)}<br>Team: ${escapeHtml(team)}`}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+['driverName','teamName','carNumber'].forEach(id=>document.querySelector('#'+id).addEventListener('input',updateIdentity));
+document.querySelector('#startBtn').onclick=()=>{const name=document.querySelector('#driverName').value.trim()||chosenPlayer.name;const team=document.querySelector('#teamName').value.trim()||'Untitled Team';const num=Math.max(1,Math.min(99,Number(document.querySelector('#carNumber').value)||27));document.querySelector('#toast').textContent=`Setup tersimpan! ${name} · ${team} · ${chosenColor.name} #${num}. Next: cockpit & driving controls 🏁`;document.querySelector('#toast').style.display='block';setTimeout(()=>document.querySelector('#toast').style.display='none',4200)};
+updateIdentity();
+let down=false,lastX=0,rot=0;canvas.addEventListener('pointerdown',e=>{down=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!down)return;rot+=(e.clientX-lastX)*.009;lastX=e.clientX});canvas.addEventListener('pointerup',()=>down=false);canvas.addEventListener('pointercancel',()=>down=false);
+function animate(){requestAnimationFrame(animate);if(!down)rot+=.0018;car.rotation.y=rot;renderer.render(scene,camera)}animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
+</script>
+</body></html>
